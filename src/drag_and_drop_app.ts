@@ -1,3 +1,66 @@
+// Project Type
+enum ProjectStatus {
+    Active, Finished
+}
+
+class Project {
+    constructor(
+        public id: string,
+        public title: string,
+        public description: string,
+        public manday: number,
+        public status: ProjectStatus,
+    ) { }
+
+}
+
+// Project State Management
+// import { v4 as uuidv4 } from "uuid"; //なぜかuuidが使えなかった。。原因突き止められず
+type Listener<T> = (items: T[]) => void;
+
+abstract class State<T> {
+    protected listeners: Listener<T>[] = [];
+
+    addListener(listenerFn: Listener<T>) {
+        this.listeners.push(listenerFn);
+    }
+}
+
+
+class ProjectState extends State<Project> {
+    private projects: Project[] = [];
+    private static instance: ProjectState;
+
+    private constructor() { //シングルトーンにする場合にプライベートのコンストラクターを生成。外からインスタンス生成ができないように！！
+        super()
+    }
+
+    static getInstance() {
+        if (this.instance) {
+            return this.instance;
+        }
+        this.instance = new ProjectState();
+        return this.instance;
+    }
+
+
+
+    addProject(title: string, description: string, manday: number) {
+        const newProject = new Project(
+            Math.random().toString(),
+            title,
+            description,
+            manday,
+            ProjectStatus.Active,
+        )
+        this.projects.push(newProject);
+        for (const listenerFn of this.listeners) {
+            listenerFn(this.projects.slice()); //オリジナルを渡すと参照先を渡すため参照先で変更可能。そのため、あちこちで変更したくないときはコピーで渡す
+        }
+    }
+}
+const projectState = ProjectState.getInstance(); //シングルトーン　アプリ内で１つのインスタンスしか存在しないことを保証
+
 // validation
 interface Validatable {
     value: string | number;
@@ -41,8 +104,8 @@ function validate(validatableInput: Validatable) {
 
 // autobind decorator
 function autobind(
-    target: any,
-    methodName: string,
+    _: any,
+    _2: string,
     descriptor: PropertyDescriptor
 ) {
     const originalMethod = descriptor.value;
@@ -56,30 +119,109 @@ function autobind(
     return adjDescriptor;
 }
 
-
-class ProjectInput {
+// Compornent Class
+abstract class Compornent<T extends HTMLElement, U extends HTMLElement> {
     templateElement: HTMLTemplateElement;
-    hostElement: HTMLDivElement;
-    element: HTMLFormElement;
+    hostElement: T;
+    element: U;
+
+    constructor(
+        templateId: string,
+        hostElementId: string,
+        insertAtStart: boolean,
+        newElementId?: string
+    ) {
+        this.templateElement = document.getElementById(templateId)! as HTMLTemplateElement;
+        this.hostElement = document.getElementById(hostElementId)! as T;
+
+        const importedNode = document.importNode(this.templateElement.content, true);
+        this.element = importedNode.firstElementChild as U;
+        if (newElementId) {
+            this.element.id = newElementId;
+        }
+
+        this.attach(insertAtStart);
+    }
+
+    abstract configure(): void;
+    abstract renderContent(): void;
+
+    private attach(insertAtBeginning: boolean) {
+        this.hostElement.insertAdjacentElement(
+            insertAtBeginning ? "afterbegin" : "beforeend",
+            this.element
+        );
+    }
+}
+
+
+// ProjectList Class
+class ProjectList extends Compornent<HTMLDivElement, HTMLElement> {
+    assignedProjects: Project[];
+
+    constructor(private type: "active" | "finished") {
+        super("project-list", "app", false, `${type}-projects`)
+        this.assignedProjects = [];
+
+        this.configure();
+        this.renderContent();
+    }
+
+
+    configure() {
+        projectState.addListener((projects: Project[]) => {
+            const relevantProjects = projects.filter((prj) => {
+                if (this.type === "active") {
+                    return prj.status === ProjectStatus.Active;
+                }
+                return prj.status === ProjectStatus.Finished;
+            })
+            this.assignedProjects = relevantProjects;
+            this.renderProjects();
+        })
+    }
+
+    renderContent() {
+        const listId = `${this.type}-projects-list`;
+        this.element.querySelector("ul")!.id = listId;
+        this.element.querySelector("h2")!.textContent =
+            this.type === "active" ? "実行中プロジェクト" : "完了プロジェクト";
+    }
+
+    private renderProjects() {
+        const listEl = document.getElementById(`${this.type}-projects-list`)! as HTMLUListElement;
+        listEl.innerHTML = "";
+        for (const pjtItem of this.assignedProjects) {
+            const listItem = document.createElement("li");
+            listItem.textContent = pjtItem.title;
+            listEl.appendChild(listItem);
+        }
+    }
+}
+
+
+// ProjectInput Class
+class ProjectInput extends Compornent<HTMLDivElement, HTMLFormElement>{
     titleInputElement: HTMLInputElement;
     descriptionInputElement: HTMLInputElement;
     mandayInputElement: HTMLInputElement;
 
     constructor() {
-        this.templateElement = document.getElementById("project-input")! as HTMLTemplateElement;
-        this.hostElement = document.getElementById("app")! as HTMLDivElement;
-
-        const importedNode = document.importNode(this.templateElement.content, true);
-        this.element = importedNode.firstElementChild as HTMLFormElement;
-        this.element.id = "user-input";
+        super("project-input", "app", true, "user-input");
 
         this.titleInputElement = this.element.querySelector("#title") as HTMLInputElement;
         this.descriptionInputElement = this.element.querySelector("#description") as HTMLInputElement;
         this.mandayInputElement = this.element.querySelector("#manday") as HTMLInputElement;
 
         this.configure();
-        this.attach();
     }
+
+    configure() {
+        // this.element.addEventListener("submit", this.submitHandler.bind(this)); bindメソッドで、submitHndler側のthisもこのクラスのオブジェクトを指すことを明示的に示す。他のやり方はデコレーターを使う
+        this.element.addEventListener("submit", this.submitHandler);
+    }
+
+    renderContent() { }
 
     private gatherUserInput(): [string, string, number] | void { //union型でvoid型を入れることでalartのようにタプルを返さない条件分岐もOKにする。
         const enteredTitle = this.titleInputElement.value;
@@ -128,18 +270,16 @@ class ProjectInput {
         const userInput = this.gatherUserInput();
         if (Array.isArray(userInput)) {
             const [title, desc, manday] = userInput;
-            console.log(title, desc, manday);
+            projectState.addProject(title, desc, manday);
+            // console.log(title, desc, manday);
             this.clearInputs();
         }
     }
 
-    private configure() {
-        // this.element.addEventListener("submit", this.submitHandler.bind(this)); bindメソッドで、submitHndler側のthisもこのクラスのオブジェクトを指すことを明示的に示す。他のやり方はデコレーターを使う
-        this.element.addEventListener("submit", this.submitHandler);
-    }
 
-    private attach() {
-        this.hostElement.insertAdjacentElement("afterbegin", this.element);
-    }
 }
+
+
 const prjInput = new ProjectInput();
+const activePjtList = new ProjectList("active");
+const finishedPjtList = new ProjectList("finished");
