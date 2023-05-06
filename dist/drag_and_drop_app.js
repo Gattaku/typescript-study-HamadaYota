@@ -43,6 +43,16 @@ class ProjectState extends State {
     addProject(title, description, manday) {
         const newProject = new Project(Math.random().toString(), title, description, manday, ProjectStatus.Active);
         this.projects.push(newProject);
+        this.updateListeners();
+    }
+    moveProject(projectId, newStatus) {
+        const project = this.projects.find(prj => prj.id === projectId);
+        if (project && project.status !== newStatus) {
+            project.status = newStatus;
+            this.updateListeners();
+        }
+    }
+    updateListeners() {
         for (const listenerFn of this.listeners) {
             listenerFn(this.projects.slice()); //オリジナルを渡すと参照先を渡すため参照先で変更可能。そのため、あちこちで変更したくないときはコピーで渡す
         }
@@ -104,6 +114,45 @@ class Compornent {
         this.hostElement.insertAdjacentElement(insertAtBeginning ? "afterbegin" : "beforeend", this.element);
     }
 }
+// ProjectItem Class
+class ProjectItem extends Compornent {
+    get manday() {
+        if (this.project.manday < 20) {
+            return `${this.project.manday.toString()}人日`;
+        }
+        else {
+            return `${(this.project.manday / 20).toString()}人月`;
+        }
+    }
+    constructor(hostId, project) {
+        super("single-project", hostId, false, project.id);
+        this.project = project;
+        this.configure();
+        this.renderContent();
+    }
+    dragStartHandler(event) {
+        event.dataTransfer.setData("text/plain", this.project.id);
+        event.dataTransfer.effectAllowed = "move";
+    }
+    dragEndHandler(_) {
+        console.log("Drag終了");
+    }
+    configure() {
+        this.element.addEventListener("dragstart", this.dragStartHandler);
+        this.element.addEventListener("dragend", this.dragEndHandler);
+    }
+    renderContent() {
+        this.element.querySelector("h2").textContent = this.project.title;
+        this.element.querySelector("h3").textContent = this.manday; //getter, setterはプロパティーのようにふるまうので、関数演算子の()は不要
+        this.element.querySelector("p").textContent = this.project.description;
+    }
+}
+__decorate([
+    autobind
+], ProjectItem.prototype, "dragStartHandler", null);
+__decorate([
+    autobind
+], ProjectItem.prototype, "dragEndHandler", null);
 // ProjectList Class
 class ProjectList extends Compornent {
     constructor(type) {
@@ -113,7 +162,28 @@ class ProjectList extends Compornent {
         this.configure();
         this.renderContent();
     }
+    dragOverHandler(event) {
+        if (event.dataTransfer && event.dataTransfer.types[0] === "text/plain") {
+            event.preventDefault(); //これをしないと、ドロップイベントが発生しない。addEventListenerで監視できない
+            const listEl = this.element.querySelector("ul");
+            listEl.classList.add("droppable");
+        }
+    }
+    dropHandler(event) {
+        const prjId = event.dataTransfer.getData("text/plain");
+        projectState.moveProject(prjId, this.type === "active" ?
+            ProjectStatus.Active
+            :
+                ProjectStatus.Finished);
+    }
+    dragLeaveHandler(_) {
+        const listEl = this.element.querySelector("ul");
+        listEl.classList.remove("droppable");
+    }
     configure() {
+        this.element.addEventListener("dragover", this.dragOverHandler);
+        this.element.addEventListener("drop", this.dropHandler);
+        this.element.addEventListener("dragleave", this.dragLeaveHandler);
         projectState.addListener((projects) => {
             const relevantProjects = projects.filter((prj) => {
                 if (this.type === "active") {
@@ -135,12 +205,19 @@ class ProjectList extends Compornent {
         const listEl = document.getElementById(`${this.type}-projects-list`);
         listEl.innerHTML = "";
         for (const pjtItem of this.assignedProjects) {
-            const listItem = document.createElement("li");
-            listItem.textContent = pjtItem.title;
-            listEl.appendChild(listItem);
+            new ProjectItem(listEl.id, pjtItem);
         }
     }
 }
+__decorate([
+    autobind
+], ProjectList.prototype, "dragOverHandler", null);
+__decorate([
+    autobind
+], ProjectList.prototype, "dropHandler", null);
+__decorate([
+    autobind
+], ProjectList.prototype, "dragLeaveHandler", null);
 // ProjectInput Class
 class ProjectInput extends Compornent {
     constructor() {
