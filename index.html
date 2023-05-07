@@ -8,9 +8,17 @@
     <title>プロジェクト管理</title>
     <link rel="stylesheet" href="./app.css" />
     <script src="./dist/drag_and_drop_app.js" defer></script>
+    <script src="./dist/decorator.js" defer></script>
 </head>
 
 <body>
+    <div id="decorator"></div>
+    <button>クリックしてください</button>
+    <form>
+        <input type="text" placeholder="コースのタイトル" id="title">
+        <input type="text" placeholder="価格" id="price">
+        <button type="submit">保存する</button>
+    </form>
     <template id="project-input">
         <form>
             <div class="form-control">

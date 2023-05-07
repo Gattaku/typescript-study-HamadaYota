@@ -4,13 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "lite-server"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@types/uuid": "^9.0.1",
+    "lite-server": "^2.6.1",
     "nodemon": "^2.0.22",
     "server": "^1.0.38",
     "uuid": "^9.0.0"
