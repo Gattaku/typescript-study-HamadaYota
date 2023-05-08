@@ -124,9 +124,9 @@ moveAnimal({ type: "bird", flyingSpeed: 10 });
 // その際、Nullでない認識で進む。
 // もしくは、型ガードを書く。
 
-// const userInput = <HTMLInputElement>document.getElementById("input-element")!;
-const userInput = document.getElementById("input-element")! as HTMLInputElement;
-userInput.value = "こんにちは";
+// // const userInput = <HTMLInputElement>document.getElementById("input-element")!;
+// const userInput = document.getElementById("input-element")! as HTMLInputElement;
+// userInput.value = "こんにちは";
 
 // const userInput = document.getElementById("input-element");
 // if (userInput) {

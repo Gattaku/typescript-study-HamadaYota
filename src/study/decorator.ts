@@ -118,9 +118,9 @@ class Message {
     }
 }
 
-const p = new Message();
-const button = document.querySelector("button")!;
-button.addEventListener("click", p.showMessage);
+// const p = new Message();
+// const button = document.querySelector("button")!;
+// button.addEventListener("click", p.showMessage);
 
 
 // ----
@@ -189,26 +189,26 @@ class Course {
     }
 }
 
-const courseForm = document.querySelector("form")!;
-courseForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const titleEl = document.getElementById("title") as HTMLInputElement;
-    const priceEl = document.getElementById("price") as HTMLInputElement;
+// const courseForm = document.querySelector("form")!;
+// courseForm.addEventListener("submit", (event) => {
+//     event.preventDefault();
+//     const titleEl = document.getElementById("title") as HTMLInputElement;
+//     const priceEl = document.getElementById("price") as HTMLInputElement;
 
-    const title = titleEl.value;
-    const price = +priceEl.value;
+//     const title = titleEl.value;
+//     const price = +priceEl.value;
 
-    // const validateResult = validateCourse(title, price);
-    // if (validateResult) {
-    const createdCourse = new Course(title, price);
-    if (!validateCourse(createdCourse)) {
-        alert("入力が正しくありません");
-    } else {
-        console.log(createdCourse);
-    }
+//     // const validateResult = validateCourse(title, price);
+//     // if (validateResult) {
+//     const createdCourse = new Course(title, price);
+//     if (!validateCourse(createdCourse)) {
+//         alert("入力が正しくありません");
+//     } else {
+//         console.log(createdCourse);
+//     }
 
 
-    // } else {
-    //     console.log("入力が正しくありません");
-    // }
-})
+//     // } else {
+//     //     console.log("入力が正しくありません");
+//     // }
+// })
