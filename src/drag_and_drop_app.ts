@@ -1,5 +1,5 @@
-import { ProjectInput } from "./components/project-input.js";
-import { ProjectList } from "./components/project-list.js";
+import { ProjectInput } from "./components/project-input";
+import { ProjectList } from "./components/project-list";
 
 // import { Draggable, DragTarget } from "./models/drag-drop.js"
 // Drag & Drop
@@ -13,7 +13,6 @@ import { ProjectList } from "./components/project-list.js";
 //     dropHandler(event: DragEvent): void;
 //     dragLeaveHandler(event: DragEvent): void;
 // }
-
 
 const prjInput = new ProjectInput();
 const activePjtList = new ProjectList("active");

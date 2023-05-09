@@ -1,4 +1,4 @@
-import { Project, ProjectStatus } from "../models/project.js";
+import { Project, ProjectStatus } from "../models/project";
 
 // Project State Management
 import { v4 as uuidv4 } from "uuid"; //なぜかuuidが使えなかった。。原因突き止められず
